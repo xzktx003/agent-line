@@ -1,0 +1,141 @@
+name: agent-line
+
+x-database-url: &database-url postgresql://agent_line:${POSTGRES_PASSWORD:?run prepare.py}@db:5432/agent_line_sim
+x-auth: &auth
+  NODE_ENV: production
+  DATABASE_URL: *database-url
+  NEXT_PUBLIC_APP_URL: ${SIM_PUBLIC_URL:-http://127.0.0.1:3190}
+  BETTER_AUTH_URL: ${SIM_PUBLIC_URL:-http://127.0.0.1:3190}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?run prepare.py}
+  INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?run prepare.py}
+  REDIS_URL: redis://redis:6379
+
+services:
+  uploads-init:
+    image: ghcr.io/simstudioai/cron@sha256:9cbf8de37f3ac7b3d18d62e9783aab5962ef202a9a17636d64e6fa1dd3c9dbcc
+    user: '0:0'
+    entrypoint: ['/bin/sh', '/usr/local/bin/agent-line-uploads-start.sh']
+    volumes:
+      - type: bind
+        source: ./uploads-start.sh
+        target: /usr/local/bin/agent-line-uploads-start.sh
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ../../var/sim/uploads
+        target: /uploads
+        bind: {create_host_path: false}
+    restart: 'no'
+  simstudio:
+    image: ${SIM_APP_IMAGE:-ghcr.io/simstudioai/simstudio@sha256:41eb452d1552ae465fa71afa5fac57ed6590fb05bbb9f7a330de14375b1a9668}
+    restart: unless-stopped
+    ports: ['127.0.0.1:3190:3000']
+    environment:
+      <<: *auth
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?run prepare.py}
+      API_ENCRYPTION_KEY: ${API_ENCRYPTION_KEY:?run prepare.py}
+      CRON_SECRET: ${CRON_SECRET:?run prepare.py}
+      NEXT_PUBLIC_CHAT_DISABLED: 'true'
+      SOCKET_SERVER_URL: http://realtime:3002
+      NEXT_PUBLIC_SOCKET_URL: ${SIM_SOCKET_URL:-http://127.0.0.1:3192}
+      EGRESS_ALLOWED_HOSTS: host.docker.internal
+      TRUSTED_ORIGINS: ${SIM_TRUSTED_ORIGINS:-}
+    extra_hosts: ['host.docker.internal:host-gateway']
+    volumes:
+      - type: bind
+        source: ../../var/sim/uploads
+        target: /app/apps/sim/uploads
+        bind: {create_host_path: false}
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrations: {condition: service_completed_successfully}
+      realtime: {condition: service_healthy}
+      uploads-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:3000']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  realtime:
+    image: ${SIM_REALTIME_IMAGE:-ghcr.io/simstudioai/realtime@sha256:3059e650bac964d3099679aef0bb14c380a53a073faee88cd8fcfb3352e83e5f}
+    restart: unless-stopped
+    ports: ['127.0.0.1:3192:3002']
+    environment: *auth
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:3002/health']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  migrations:
+    image: ${SIM_MIGRATIONS_IMAGE:-ghcr.io/simstudioai/migrations@sha256:c2cff1627f5d79d4c96d17f0ed9550ea0046b07f06d6466a9ab2bc44e7565fd2}
+    working_dir: /app/packages/db
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      db: {condition: service_healthy}
+    command: ['bun', 'run', 'db:migrate']
+    restart: 'no'
+
+  cron:
+    image: ghcr.io/simstudioai/cron@sha256:9cbf8de37f3ac7b3d18d62e9783aab5962ef202a9a17636d64e6fa1dd3c9dbcc
+    restart: on-failure
+    environment:
+      SIM_URL: http://simstudio:3000
+      CRON_SECRET: ${CRON_SECRET:?run prepare.py}
+      TZ: Asia/Shanghai
+    depends_on:
+      simstudio: {condition: service_healthy}
+
+  redis:
+    image: ${SIM_REDIS_IMAGE:-redis@sha256:7aec734b2bb298a1d769fd8729f13b8514a41bf90fcdd1f38ec52267fbaa8ee6}
+    restart: unless-stopped
+    entrypoint: ['/bin/sh', '/usr/local/bin/agent-line-redis-start.sh']
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - type: bind
+        source: ./redis-start.sh
+        target: /usr/local/bin/agent-line-redis-start.sh
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ../../var/sim/redis
+        target: /data
+        bind: {create_host_path: false}
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db:
+    image: ${SIM_POSTGRES_IMAGE:-pgvector/pgvector@sha256:feb68f4f15446397d8cac7f4fe48fe4586de83160d1fc48b46283312d1a33966}
+    restart: unless-stopped
+    entrypoint: ['/bin/sh', '/usr/local/bin/agent-line-postgres-start.sh']
+    command: ['postgres']
+    environment:
+      POSTGRES_USER: agent_line
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run prepare.py}
+      POSTGRES_DB: agent_line_sim
+    volumes:
+      - type: bind
+        source: ./postgres-start.sh
+        target: /usr/local/bin/agent-line-postgres-start.sh
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ../../var/sim/postgres
+        target: /var/lib/postgresql/data
+        bind: {create_host_path: false}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U agent_line -d agent_line_sim']
+      interval: 5s
+      timeout: 5s
+      retries: 10

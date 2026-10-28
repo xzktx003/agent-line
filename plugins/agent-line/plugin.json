@@ -1,0 +1,10 @@
+{
+  "id": "agent-line",
+  "name": "Agent Line 工作台",
+  "version": "0.1.0",
+  "description": "工作流工作台的官方插件入口；当前仅验证插件注册与接口边界。",
+  "type": "general",
+  "entry": {"backend": "plugin.py", "frontend": "dist/index.js"},
+  "dependencies": [],
+  "qwenpaw_version": {"min": "2.2.3b1", "max": "2.3.0b2"}
+}

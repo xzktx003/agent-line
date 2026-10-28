@@ -1,0 +1,13 @@
+# Apply after the base deploy/sim/compose.yaml, using the same private env file.
+services:
+  simstudio:
+    environment:
+      NEXT_PUBLIC_APP_URL: http://10.30.0.28:3194
+      BETTER_AUTH_URL: http://10.30.0.28:3194
+      NEXT_PUBLIC_SOCKET_URL: http://10.30.0.28:3194
+      TRUSTED_ORIGINS: http://127.0.0.1:3190,http://127.0.0.1:3194,http://10.30.0.28:3194
+  realtime:
+    environment:
+      NEXT_PUBLIC_APP_URL: http://10.30.0.28:3194
+      BETTER_AUTH_URL: http://10.30.0.28:3194
+      ALLOWED_ORIGINS: http://127.0.0.1:3190,http://127.0.0.1:3194,http://10.30.0.28:3194

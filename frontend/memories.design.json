@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-21T14:25:08.906768+00:00",
+  "title": "智能体流水线 · 记忆审核",
+  "extensions": {
+    "breakpoints": [
+      {
+        "name": "review-single-column",
+        "value": "1100px"
+      },
+      {
+        "name": "mobile-navigation",
+        "value": "740px"
+      }
+    ],
+    "shadows": []
+  },
+  "components": [
+    {
+      "name": "审核主操作",
+      "kind": "button",
+      "description": "核对来源与正文并确认后提交；已有或未知记录维持禁用。",
+      "html": "<button class=\"ds-review-submit\">审核并写回记忆</button>",
+      "css": ".ds-review-submit{font:600 14px/1.65 \"Noto Sans CJK SC\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif;min-height:44px;padding:10px 17px;border:1px solid transparent;border-radius:7px;cursor:pointer;background:var(--accent,#315e44);color:white}.ds-review-submit:hover{filter:brightness(.94)}.ds-review-submit:focus-visible{outline:3px solid #8bb297;outline-offset:3px}.ds-review-submit:disabled{opacity:.45;cursor:not-allowed;filter:none}"
+    },
+    {
+      "name": "查询次操作",
+      "kind": "button",
+      "description": "查询原记录和分页时复用的白底描边操作。",
+      "html": "<button class=\"ds-review-query\">查询原审核记录</button>",
+      "css": ".ds-review-query{font:600 14px/1.65 \"Noto Sans CJK SC\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif;min-height:44px;padding:10px 17px;border:1px solid transparent;border-radius:7px;cursor:pointer;background:white;color:var(--ink,#23302b);border-color:#b7c3b8}.ds-review-query:hover{filter:brightness(.94)}.ds-review-query:focus-visible{outline:3px solid #8bb297;outline-offset:3px}.ds-review-query:disabled{opacity:.45;cursor:not-allowed;filter:none}"
+    },
+    {
+      "name": "只读记忆正文",
+      "kind": "input",
+      "description": "已有审核记录正文只读，保留中文可读性，不暗示可编辑。",
+      "html": "<label class=\"ds-memory-label\" for=\"ds-memory-content\">准备保留的记忆正文</label><textarea id=\"ds-memory-content\" class=\"ds-memory-content\" rows=\"5\" readonly>来源任务结束后，经核对保留的事实与适用条件。</textarea>",
+      "css": ".ds-memory-label{display:block;font-weight:600;margin:17px 0 6px;color:var(--ink,#23302b)}.ds-memory-content{width:100%;min-width:0;font:14px/1.8 \"Noto Sans CJK SC\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif;color:var(--ink,#23302b);background:var(--paper,#f6f7f3);border:1px solid #bbc6bd;border-radius:6px;padding:10px 12px;resize:vertical;caret-color:var(--accent,#315e44)}.ds-memory-content:focus-visible{outline:3px solid #8bb297;outline-offset:3px}"
+    },
+    {
+      "name": "工作台导航",
+      "kind": "nav",
+      "description": "深墨导航承载三个已有入口；移动端横排，当前页仍显式标记。",
+      "html": "<nav class=\"ds-memory-nav\" aria-label=\"工作台导航\"><a href=\"#run\">运行工作台</a><a href=\"#approval\">人工审批</a><a href=\"#memory\" aria-current=\"page\">记忆审核</a></nav>",
+      "css": ".ds-memory-nav{display:grid;gap:7px;background:#24352d;padding:23px;font:14px/1.65 \"Noto Sans CJK SC\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif}.ds-memory-nav a{display:block;padding:11px 14px;border-radius:6px;color:#d2ddd2;min-height:44px;text-decoration:none}.ds-memory-nav a:hover,.ds-memory-nav a[aria-current=page]{background:#3b4d42;color:white}.ds-memory-nav a:focus-visible{outline:3px solid #8bb297;outline-offset:3px}@media(max-width:740px){.ds-memory-nav{display:flex;flex-wrap:wrap;padding:18px 20px;gap:0}.ds-memory-nav a{font-size:12px;padding:9px}}"
+    },
+    {
+      "name": "来源任务选中行",
+      "kind": "custom",
+      "description": "任务标识、来源运行与执行资源状态使用文本；选中行以底色和内侧细线共同标识。",
+      "html": "<button class=\"ds-memory-source\" aria-current=\"true\"><strong>来源任务标识</strong><span class=\"ds-memory-context\">运行：来源运行标识</span><span>执行成功 · 资源已退出</span></button>",
+      "css": ".ds-memory-source{display:grid;gap:7px;width:100%;padding:16px 8px;text-align:left;white-space:normal;overflow-wrap:anywhere;border:0;border-radius:0;background:transparent;color:var(--ink,#23302b);font:600 14px/1.65 \"Noto Sans CJK SC\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif;cursor:pointer;min-height:44px}.ds-memory-source[aria-current=true]{background:#edf2eb;outline:1px solid var(--accent,#315e44);outline-offset:-1px}.ds-memory-source:hover{background:#edf2eb;filter:brightness(.94)}.ds-memory-source:focus-visible{outline:3px solid #8bb297;outline-offset:3px}.ds-memory-context{font-size:13px;color:var(--muted,#627067)}"
+    },
+    {
+      "name": "审核边框面板",
+      "kind": "card",
+      "description": "来源、编辑与已有记录使用平面白底边框；不添加阴影。",
+      "html": "<section class=\"ds-memory-panel\"><h3>核对来源与正文</h3><p>已有审核记录正文只读。</p></section>",
+      "css": ".ds-memory-panel{background:var(--surface,#fff);color:var(--ink,#23302b);border:1px solid var(--line,#dce2da);border-radius:12px;padding:23px 25px;font:14px/1.65 \"Noto Sans CJK SC\",\"PingFang SC\",\"Microsoft YaHei\",sans-serif}.ds-memory-panel h3{font-size:17px;font-weight:650;margin:0 0 6px}.ds-memory-panel p{margin:0;color:var(--muted,#627067)}@media(max-width:1100px){.ds-memory-panel{padding:20px}}"
+    }
+  ],
+  "narrative": {
+    "overview": "暖白阅读面、深墨导航、苔绿操作色；真实警告用琥珀，失败用暗红。系统中文字体保证离线可读。边框而非叠加阴影。技术标识与JSON使用等宽字体，普通正文不使用等宽。移动端导航横排、表单单列。焦点可见，所有状态有文本而非仅靠颜色。",
+    "keyCharacteristics": [
+      "暖白阅读面、深墨导航、苔绿操作色",
+      "边框而非叠加阴影",
+      "焦点可见，所有状态有文本而非仅靠颜色"
+    ],
+    "rules": [],
+    "dos": [
+      "Do 用中文状态与明确的只读、禁用反馈解释当前可用操作，不能只靠颜色表示写回结果。",
+      "Do 在来源详情读取失败时保持新审核不可用，并明确预览截断。"
+    ],
+    "donts": [
+      "Don't 将记忆审核页表述成已具备删除、编辑既有记忆或完整索引治理能力。",
+      "Don't 继承旧页面的装饰性 eyebrow；它是现存缺陷，不是此工作台的字体层级规则。"
+    ]
+  }
+}

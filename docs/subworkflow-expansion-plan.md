@@ -1,0 +1,9 @@
+# 子流程编译展开预览计划
+
+本轮实现真正的单层子图入口/出口转换与来源marker回读预览，不将模板复制称为子流程执行，也不提前开放写入/发布。新逻辑节点subflow_input/subflow_output编译为固定Sim function；入口保存精确版本reference与原sourceDocument/callId/inputFrom，出口保留原结束JSON响应语义并继续父后继。旧图编译不变。
+
+授权preview基于上一轮read_reference指定版本核验，父图hash核对后只在内存替换明确edge，确定性重命名子节点/连线，child start转换入口、唯一end转换出口。子条件input来源重定向到本次入口，Agent/条件/汇合/循环引用同步重命名；生成后原编译器验证完整图。最多200节点/1000边、1MiB编译态、256KiB来源文档；第一步明确拒嵌套调用和多结束子图，现有loop/parallel组合限制保留。
+
+来源不能仅写在外部binding：AL_SUBFLOW_INPUT_V1与AL_SUBFLOW_OUTPUT_V1使用已知function code注释marker，decode解析配置后必须完整重编相同native图。入口sourceDocument按原child namespace重编校验ref hash；全组节点配置/名称和内部边须与确定性展开一致（允许独立视觉坐标布局），外部只能进入口/出出口，不能绕过或篡改子逻辑。不额外创建正式Agent/会话/记忆系统或调度器。
+
+本轮接口显式executionSupported=false，仅预览不保存/发布/启动。原authoring save/publish遇新包装节点明确拒绝；待后续补完整嵌套/映射编辑、服务端来源所有权/预算准入后再开放。运行预算最终复用父run，不新增子run；本轮不假装这些已完成。根负责sim_authoring.py/authoring_api.py，Luna负责subworkflow_expansion.py，另一Luna只读复核。仅源码/AST，禁止测试/Node/HTTP/浏览器/模型/lint/build，不提升AC33。

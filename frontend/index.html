@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>任务与服务 · 智能体流水线</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./task-activity.js" defer></script>
+  <script src="./overview.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">跳到主要内容</a>
+  <aside class="sidebar">
+    <a class="brand" href="./index.html"><span>智能体流水线<small>本机工作台</small></span></a>
+    <nav aria-label="工作台导航"><a href="./index.html" class="selected" aria-current="page">任务与服务</a><a href="./editor.html">流程搭建</a><a href="./runs.html" id="overview-manage">运行管理</a><a href="./approvals.html">人工审批</a><a href="./memories.html">记忆审核</a><a href="./team.html">Agent 团队</a></nav>
+    <div class="sidebar-note">打开即看本机记录<br>执行、验收和记忆分别显示</div>
+  </aside>
+  <main id="main">
+    <header class="page-header"><div><h1>任务与服务</h1><p>直接查看本机已有任务和已配置的服务，无需手动连接。</p></div><button type="button" id="overview-refresh" class="secondary">刷新列表</button></header>
+    <div id="overview-notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <section class="section" aria-labelledby="services-title">
+      <div class="section-heading"><div><h2 id="services-title">已配置服务</h2><p class="muted">查看各项服务的用途；已配置不代表原生服务的当前健康状态。</p></div></div>
+      <ul id="overview-services" class="overview-services" aria-label="本机已配置服务"><li class="muted">正在读取服务列表…</li></ul>
+    </section>
+    <section class="section panel" aria-labelledby="tasks-title">
+      <div class="section-heading"><div><h2 id="tasks-title">已有任务</h2><p class="muted">查看角色与执行结果；详细记录通过“查看任务详情”进入。</p></div><a href="./runs.html" class="overview-action">运行与详情管理</a></div>
+      <div class="task-filters">
+        <div><label for="overview-project">项目</label><select id="overview-project"><option value="">全部项目</option></select></div>
+        <div><label for="overview-status">执行状态</label><select id="overview-status"><option value="">全部状态</option><option value="registered">已登记</option><option value="submitting">提交中</option><option value="uncertain">结果待核对</option><option value="accepted">已接收</option><option value="succeeded">执行成功</option><option value="failed">执行失败</option><option value="cancel_requested">已申请取消</option><option value="canceled">已取消</option></select></div>
+        <div><label for="overview-size">每页记录数</label><select id="overview-size"><option value="10">10 条</option><option value="25" selected>25 条</option><option value="50">50 条</option></select></div>
+      </div>
+      <p id="overview-message" class="field-help" role="status">正在读取本机任务记录…</p>
+      <ul id="overview-tasks" class="task-list" aria-label="本机已有任务"></ul>
+      <div class="task-pagination"><button id="overview-prev" type="button" class="secondary" disabled>上一页</button><span id="overview-page">第 1 页</span><button id="overview-next" type="button" class="secondary" disabled>下一页</button></div>
+    </section>
+    <footer><strong>列表只展示摘要</strong><span>启动、取消、审批和敏感详情仍由原操作权限保护。</span></footer>
+  </main>
+</body>
+</html>

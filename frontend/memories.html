@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer">
+  <title>记忆审核 · 智能体流水线</title>
+  <link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./memories.css">
+  <script src="./memory-batch.js" defer></script>
+  <script src="./memories.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">跳到主要内容</a>
+<aside class="sidebar">
+  <a class="brand" href="./index.html"><span>智能体流水线<small>记忆审核</small></span></a>
+  <nav aria-label="工作台导航"><a href="./editor.html">流程搭建</a><a href="./index.html">任务与服务</a><a href="./runs.html">运行管理</a><a href="./approvals.html">人工审批</a><a href="./memories.html" class="selected" aria-current="page">记忆审核</a><a href="./team.html">Agent 团队</a></nav>
+  <div class="sidebar-note">从已结束的任务中<br>留下经过核对的记忆</div>
+</aside>
+<main id="main">
+  <header class="page-header"><div><h1>记忆审核</h1><p>选择项目角色 → 核对已结束任务与正文 → 确认写回。</p></div><span id="memory-connection" class="badge">尚未连接</span></header>
+  <section class="connection-panel" aria-labelledby="connection-title">
+    <div><h2 id="connection-title">连接记忆审核身份</h2><p>使用独立的记忆审核凭证。凭证仅保留在当前页面内存，刷新即清除。</p></div>
+    <form id="memory-login" class="login-form"><label for="memory-token">记忆审核凭证</label><div class="inline"><input id="memory-token" type="password" autocomplete="off" spellcheck="false" required placeholder="粘贴记忆审核凭证"><button id="memory-connect" type="submit">连接审核</button></div></form>
+    <button id="memory-logout" class="quiet" hidden>退出审核身份</button>
+  </section>
+  <div id="memory-notice" class="notice" role="status" aria-live="polite" hidden></div>
+  <section class="section memory-workspace" aria-labelledby="review-title">
+    <div class="section-heading"><div><h2 id="review-title">来源任务</h2><p class="muted">仅已结束且执行资源已退出的任务可提交审核。</p></div><button id="memory-refresh-sources" class="secondary" disabled>刷新来源</button></div>
+    <div class="memory-layout">
+      <div class="panel memory-sources">
+        <label for="memory-binding">项目与角色</label><select id="memory-binding" disabled><option value="">连接后选择角色</option></select>
+        <p id="memory-sources-message" class="muted" aria-live="polite">连接后读取可访问角色及来源任务。</p>
+        <ul id="memory-sources" class="task-list" aria-label="来源任务"></ul>
+        <div class="task-pagination"><button id="memory-source-prev" class="secondary" disabled>上一页</button><span id="memory-source-page">第 1 页</span><button id="memory-source-next" class="secondary" disabled>下一页</button></div>
+      </div>
+      <section class="panel memory-editor" aria-labelledby="content-title">
+        <div class="section-heading"><h3 id="content-title">核对来源与正文</h3><button id="memory-query" class="secondary" disabled>查询原审核记录</button></div>
+        <div id="memory-context" class="result empty"><p>尚未选择来源任务</p><small>选择左侧任务后，这里显示真实来源与审核状态。</small></div>
+        <div id="memory-reconciliation" hidden>
+          <button id="memory-reconcile" class="secondary" type="button" disabled aria-describedby="memory-reconcile-help">核对写回</button>
+          <p id="memory-reconcile-help" class="field-help">只读取原记忆核对写回结果，不重复写入记忆或执行编码任务。</p>
+        </div>
+        <div id="memory-retry-area" hidden>
+          <button id="memory-retry" class="secondary" type="button" disabled aria-describedby="memory-retry-help">重试记忆写回</button>
+          <p id="memory-retry-help" class="field-help">仅在原写回被明确拒绝时重试同一份已审核正文，不重新执行编码任务。结果未知时请查询或核对原记录。</p>
+        </div>
+        <details id="memory-deletion-panel" class="memory-deletion" hidden>
+          <summary>受控删除已审核记忆</summary>
+          <p class="field-help">删除会清除受管提交正文并可能持续阻止该角色接收新任务。当前原生适配不能确认索引与缓存均已清除；文件消失不代表删除完成。</p>
+          <dl id="memory-deletion-target" class="deletion-target"></dl>
+          <p id="memory-deletion-state" class="feedback" role="status" aria-live="polite">尚未核对删除状态。</p>
+          <label class="memory-consent"><input id="memory-deletion-confirm" type="checkbox" disabled><span>我已核对上方项目、角色、任务和原正文摘要；确认发起一次受控删除，并理解角色可能持续被阻止。</span></label>
+          <div class="deletion-actions">
+            <button id="memory-deletion-request" type="button" class="secondary" disabled>发起一次受控删除</button>
+            <button id="memory-deletion-query" type="button" class="secondary" disabled>查询删除状态</button>
+          </div>
+        </details>
+        <details id="memory-source-detail" class="memory-evidence" hidden></details>
+        <button id="memory-build-experience" type="button" class="secondary" disabled aria-describedby="memory-experience-help">整理为经验草稿</button>
+        <p id="memory-experience-help" class="field-help">补全结论、适用与失效条件、版本及操作边界后再人工审核；草稿不会写入记忆或授予技能权限。</p>
+        <form id="memory-review-form">
+          <label for="memory-content">准备保留的记忆正文</label>
+          <textarea id="memory-content" rows="9" disabled placeholder="核对任务结论后，写下需要保留的事实、经验与适用条件。" aria-describedby="memory-content-help memory-decision"></textarea>
+          <p id="memory-content-help" class="field-help">正文将写入所选角色。已有审核正文只读；受控删除请使用下方独立入口。</p>
+          <details class="advanced-options"><summary>候选写入期限（可选）</summary>
+            <label for="memory-deadline">截止时间（本机时区）</label>
+            <input id="memory-deadline" type="datetime-local" step="1" disabled>
+            <button id="memory-deadline-apply" type="button" class="secondary" disabled>应用到正文</button>
+            <p class="field-help">设置后会在正文首行保存 UTC 时间。留空再应用可移除未提交候选的期限。到期后禁止首次写入和明确失败后的重试；已写入内容仍可能被原生记忆召回，不会自动删除。</p>
+          </details>
+          <p id="memory-deadline-state" class="field-help" role="status" aria-live="polite"></p>
+          <label class="memory-consent"><input id="memory-consent" type="checkbox" disabled><span>我已核对来源与正文，同意将此内容写入该角色的记忆。</span></label>
+          <button id="memory-submit" type="submit" disabled>审核并写回记忆</button>
+          <button id="memory-batch-stage" type="button" class="secondary" disabled>加入批量待审</button>
+          <p id="memory-batch-help" class="field-help" role="status">暂存不写回；最多加入同一项目的 10 项，再统一核对完整正文并确认。修改本页正文不会改变已暂存的项，需要移除后重新加入。</p>
+        </form>
+        <details id="memory-skill-editor" class="memory-skill-candidate" hidden>
+          <summary>整理已审核经验为技能候选</summary>
+          <p class="field-help">候选只用于人工审阅和下载，不会创建或启用原生技能。步骤由你独立填写；原记忆正文只作为来源参考。</p>
+          <form id="memory-skill-form" novalidate>
+            <label for="memory-skill-name">技能名称</label>
+            <input id="memory-skill-name" name="name" type="text" maxlength="64" pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*" autocomplete="off" required disabled>
+            <p class="field-help">使用小写字母、数字和单连字符，最多 64 个字符，不能以连字符开头或结尾。</p>
+            <label for="memory-skill-description">简短说明</label>
+            <input id="memory-skill-description" name="description" type="text" maxlength="1024" required disabled>
+            <label for="memory-skill-version">适用版本</label>
+            <input id="memory-skill-version" name="version" type="text" maxlength="160" required disabled>
+            <label for="memory-skill-applicable">适用条件</label>
+            <textarea id="memory-skill-applicable" name="applicableWhen" rows="3" maxlength="4000" required disabled></textarea>
+            <label for="memory-skill-invalid">失效条件</label>
+            <textarea id="memory-skill-invalid" name="invalidWhen" rows="3" maxlength="4000" required disabled></textarea>
+            <label for="memory-skill-boundaries">操作边界</label>
+            <textarea id="memory-skill-boundaries" name="boundaries" rows="4" maxlength="8000" required disabled></textarea>
+            <label for="memory-skill-steps">人工编写的操作步骤</label>
+            <textarea id="memory-skill-steps" name="steps" rows="7" maxlength="32000" required disabled placeholder="请独立编写经过核对的步骤；不会从模型输出或记忆正文自动填入。"></textarea>
+            <p class="field-help">生成候选只会提交这些字段和当前已提交记忆的摘要供服务端核对；不会改写或重复提交记忆。</p>
+            <button id="memory-skill-generate" type="submit" class="secondary" disabled>生成技能候选预览</button>
+          </form>
+          <p id="memory-skill-status" class="feedback" role="status" aria-live="polite">完整填写后生成候选预览。</p>
+          <details id="memory-skill-preview" class="memory-evidence" hidden>
+            <summary>查看完整技能候选 JSON</summary>
+            <pre id="memory-skill-json"></pre>
+          </details>
+          <label class="memory-consent"><input id="memory-skill-download-confirm" type="checkbox" disabled><span>我已检查完整候选及其目标身份，确认仅下载文件供有原生技能管理权限的人继续审核。</span></label>
+          <button id="memory-skill-download" type="button" class="secondary" disabled>下载禁用技能候选 JSON</button>
+          <button id="memory-skill-observe" type="button" class="secondary" disabled>核对原生技能</button>
+          <p class="field-help">核对只读取所选角色的原生技能正文与启用状态；未观察到不代表名称可安全使用，也不代表已通过安全扫描。</p>
+          <p class="field-help">下载文件中的完整包装包含来源范围和后续人工操作要求；若交给原生接口，仅使用其中的 nativeRequest。不要直接安装；安装后还须核对真实禁用状态。</p>
+        </details>
+        <p id="memory-decision" class="feedback" role="status" aria-live="polite">尚未提交审核。</p>
+        <p class="field-help">结果未知时保留同一审核标识与正文，只查询原记录，不重复提交。退出会清除正文与审核标识；同一任务仍受本页防重保护。</p>
+      </section>
+    </div>
+  </section>
+  <section id="memory-batch" class="section" aria-label="批量记忆审核"></section>
+  <section class="section" aria-labelledby="history-title">
+    <div class="section-heading"><div><h2 id="history-title">已有审核记录</h2><p class="muted">查看审核人、来源证据与写回状态。</p></div><button id="memory-refresh-history" class="secondary" disabled>刷新审核记录</button></div>
+    <div class="panel">
+      <p id="memory-history-message" class="muted" aria-live="polite">连接后读取当前身份可访问的审核记录。</p>
+      <ul id="memory-history" class="task-list memory-history" aria-label="记忆审核记录"></ul>
+      <div class="task-pagination"><button id="memory-history-prev" class="secondary" disabled>上一页</button><span id="memory-history-page">第 1 页</span><button id="memory-history-next" class="secondary" disabled>下一页</button></div>
+    </div>
+  </section>
+  <footer><strong>写回状态与检索效果分别核验</strong><span>“已写回”表示官方文件读回匹配；不代表检索索引已更新或后续任务一定召回。</span></footer>
+</main>
+</body>
+</html>

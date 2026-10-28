@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "repositories": {
+    "qwenpaw": {
+      "path": "upstream/qwenpaw",
+      "remote": "https://github.com/agentscope-ai/QwenPaw.git",
+      "commit": "502b59d88464d5c9e8be4a507347282d6a54e0be",
+      "selection": "G0 candidate; runtime compatibility not yet verified"
+    },
+    "sim": {
+      "path": "upstream/sim",
+      "remote": "https://github.com/simstudioai/sim.git",
+      "commit": "27b53561def7db4eaa9ad2f12c04ea1a0eaaf91c",
+      "selection": "G0 candidate; runtime compatibility not yet verified"
+    }
+  }
+}

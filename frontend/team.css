@@ -1,0 +1,60 @@
+.team-directory { margin-top: 22px; }
+.team-directory h2 { font-size: 17px; }
+.team-directory label { max-width: 560px; }
+.team-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+.team-heading h2 { font-size: 22px; }
+.team-help { margin: 8px 0 18px; color: var(--muted); font-size: 13px; max-width: 75ch; overflow-wrap: anywhere; }
+.team-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(290px, .7fr); gap: 20px; align-items: start; }
+.team-graph-panel, .team-editor, .team-tasks { min-width: 0; }
+.team-graph-panel > h3, .team-editor > h3, .team-tasks h3 { margin-bottom: 7px; }
+.graph-scroll { overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); margin-top: 12px; }
+.graph-scroll svg { display: block; width: 100%; min-width: 260px; min-height: 130px; }
+.team-edge { fill: none; stroke: var(--accent); stroke-width: 2; }
+.team-edge.staged { stroke-width: 3; stroke-dasharray: 6 4; }
+.team-edge.stale { stroke: var(--danger); stroke-dasharray: 5 4; }
+.team-arrow { fill: var(--accent); }
+.team-node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.team-node text { fill: var(--ink); font-family: inherit; font-size: 13px; }
+.team-node text + text { fill: var(--muted); font-size: 12px; }
+.team-node.disabled rect { fill: var(--paper); stroke: var(--line); stroke-dasharray: 4 3; }
+.subheading { margin: 22px 0 7px; font-size: 15px; }
+.role-list, .edge-list { margin: 0; padding-left: 21px; display: grid; gap: 7px; }
+.role-list li { padding: 7px 0; overflow-wrap: anywhere; }
+.role-list li strong { font-weight: 600; }
+.role-list li small { display: block; color: var(--muted); font-size: 12px; }
+.role-status { margin-left: 10px; color: var(--muted); font-size: 12px; }
+.edge-row { color: var(--ink); }
+.edge-row.stale { color: var(--danger); }
+.edge-row button, .edge-list button { margin-left: 12px; padding: 5px 10px; min-height: 44px; font-size: 12px; }
+.team-editor form { margin: 12px 0 25px; }
+.team-editor h4 { margin: 18px 0 9px; font-size: 14px; }
+.edge-list li { overflow-wrap: anywhere; }
+.team-editor .muted { margin-top: 7px; }
+.team-tasks { margin-top: 20px; }
+.team-tasks .section-heading { margin-bottom: 8px; }
+.role-tasks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+.role-task { border-top: 1px solid var(--line); padding: 14px 0; min-width: 0; }
+.role-task h4 { margin: 0 0 8px; overflow-wrap: anywhere; }
+.role-task p { margin: 3px 0; }
+.role-task dl { display: grid; grid-template-columns: 105px minmax(0, 1fr); gap: 4px 10px; margin: 0; font-size: 12px; }
+.role-task dt { color: var(--muted); }
+.role-task dd { margin: 0; overflow-wrap: anywhere; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.team-tasks + .section { margin-top: 20px; }
+
+@media (max-width: 1000px) {
+  .team-grid { grid-template-columns: 1fr; }
+  .team-editor { order: 0; }
+  .team-graph-panel { order: 1; }
+  .team-tasks { order: 2; }
+}
+@media (max-width: 740px) {
+  .sidebar nav a { display: block !important; }
+  .team-heading { align-items: flex-start; flex-direction: column; }
+  .team-heading button { width: 100%; }
+  .role-tasks { grid-template-columns: 1fr; }
+  .team-actions { flex-wrap: wrap; }
+  .team-directory .section-heading { align-items: flex-start; }
+  .team-graph-panel, .team-editor, .team-tasks { padding: 18px; }
+  .team-directory { padding: 19px; }
+}

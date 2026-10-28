@@ -1,0 +1,16 @@
+# Explicit opt-in only; run.sh verifies the private prepared directory first.
+services:
+  cron:
+    user: ${AGENT_LINE_SIM_TRIGGER_CRON_OWNER:?use run.sh to select the private file owner}
+    extra_hosts: ['host.docker.internal:host-gateway']
+    volumes:
+      - type: bind
+        source: ${AGENT_LINE_SIM_TRIGGER_CRON_DIR:?select an absolute prepared directory}
+        target: /agent-line-triggers
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${AGENT_LINE_SIM_TRIGGER_CRON_DIR:?select an absolute prepared directory}/crontab
+        target: /etc/sim/crontab
+        read_only: true
+        bind: {create_host_path: false}

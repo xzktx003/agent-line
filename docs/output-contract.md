@@ -1,0 +1,19 @@
+# 声明的任务结果结构校验
+
+## 本轮计划
+
+为现有task-result标识落实实际结构契约，而非只保存名称。复用插件当前输出：text为非空字符串、nativeStatus为task_complete、toolEvidence为对象数组，三个字段精确匹配；全文为有限JSON且UTF-8不超过1000000字节。只检查结果结构，不用模型text声明替代产物或独立测试证据，不从混杂说明里猜测 JSON，不引入JSON Schema依赖。整段单一围栏内的原 JSON 可以投影，已保存正文不改。
+
+新直接节点请求拒绝未知schema；原已登记的未知schema不执行新的提交。成功任务的输出不合法时，在自动验收与新的Sim回传前阻断，保留原编码状态/产物/资源事实，不自动重新编码或修正文案。历史已保存回传只返回原回执，不重投。缺schema的内部历史记录保持旧路径兼容，公开投影为未知，不宣称已校验；所有新公开请求原本即要求outputSchemaId。
+
+任务API和中文详情显示独立outputValidation结果。task-result只覆盖已有Codex桥输出结构；2026-10-23补充的coding-result-v1/review-result-v1及条件投影见[business-output.md](business-output.md)，仍不是任意业务Schema编辑器。业务结果若整段只是单一 Markdown 围栏，校验时可投影围栏内的原 JSON，原因记为 same_body_fence_unwrapped，不改已保存正文，也不因此把条款标成通过。
+
+## 实施结果与兼容性
+
+output_contract.py集中保存已支持契约；Dispatcher在claim前拒绝已登记未知结构的新提交，AutomaticVerifier在任何文件/命令验收前拒绝错误成功输出，CompletionRelay在原历史回执及取消守卫之后阻止新的错误成功回传。API详情追加outputValidation，目录不计算或返回这一项，避免为列表反复序列化大结果；中文详情区分有效、无效、不支持、未就绪和历史未知，均不代替独立验收。
+
+独立静态审查发现直接在HTTP入口按未知schema拒绝，会破坏旧任务精确幂等重试。现将限制落实到TaskStore.register(replay_only=True)的同一BEGIN IMMEDIATE事务：先按完整payload摘要判同一键的精确重试/冲突，无旧记录才拒绝新增。授权、角色、原服务准入、预算派生仍先执行，不凭幂等键盲返任务，不改旧记录或数据库结构。取消请求优先于新输出结构检查；已有恢复回执仍先核对原冻结事实并原样返回。
+
+三个既有HTTP fixture的合法schema名称、循环fixture输出及一个显式synthetic并行探针辅助函数同步当前桥格式，没有新增测试方法，探针仍明确synthetic/noExecutorCreated且没有执行。正式配置、主后端和原生插件未修改或重载。仅Python AST/源码审查，没有本轮功能通过证明。
+
+错误结构不会被自动“修正”或转换成编码失败。原产物、执行终态及验证前的工作区保护保持；当前没有人工改写已冻结输出的接口，需人工核对后显式处理原任务或建立新的业务运行。不支持结构的已登记未启动任务保持原身份，用户可按既有取消流程处理，不自动换schema/角色或重投。未来若要允许其他业务Schema，需要显式实现、发布并固定新契约，不能给任意schema标识放行。

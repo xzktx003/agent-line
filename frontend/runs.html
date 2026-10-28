@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>运行管理 · 智能体流水线</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./task-activity.js" defer></script>
+  <script src="./run-decisions.js" defer></script><script src="./run-view.js" defer></script>
+  <script src="./work-items.js" defer></script>
+  <script src="./trigger-inspection.js" defer></script>
+  <script src="./run-health.js" defer></script>
+  <script src="./run-input-reuse.js" defer></script>
+  <script src="./service-capabilities.js" defer></script>
+  <script src="./task-reconcile.js" defer></script>
+  <script src="./task-workflow-draft.js" defer></script>
+  <script src="./memory-trace.js" defer></script>
+  <script src="./task-kanban.js" defer></script>
+  <script src="./run-observation.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">跳到主要内容</a>
+  <aside class="sidebar">
+    <a class="brand" href="#main"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 8h20M6 16h13M6 24h20"/><circle cx="23" cy="16" r="3"/></svg><span>智能体流水线<small>工作台</small></span></a>
+    <nav aria-label="工作台导航"><a href="./editor.html">流程搭建</a><a href="./index.html">任务与服务</a><a href="#workflows" class="selected">运行管理</a><a href="#tasks">任务中心</a><a href="./approvals.html">人工审批</a><a href="./memories.html">记忆审核</a><a href="./team.html">Agent 团队</a></nav>
+    <div class="sidebar-note">任务有据可查<br>执行状态与验收结论分别记录</div>
+  </aside>
+  <main id="main">
+    <header class="page-header"><div><h1>运行管理</h1><p>启动已发布的工作流，查看进度与结果。</p></div><span id="connection-badge" class="badge">尚未授权</span></header>
+    <p class="quick-help">查看已有任务和服务无需授权。启动、取消与详细记录操作使用本页的运行身份。</p>
+    <section class="connection-panel" id="connection" aria-labelledby="connection-title">
+      <div><h2 id="connection-title">运行操作授权</h2><p id="connection-hint">仅在需要运行或管理任务时使用，凭证只保留在当前页面。</p></div>
+      <form id="login-form" class="login-form"><label for="token">运行凭证</label><div class="inline"><input id="token" name="token" type="password" autocomplete="off" required placeholder="粘贴运行操作凭证" spellcheck="false"><button type="submit">授权操作</button></div></form>
+      <div id="connected-actions" class="inline" hidden><button id="refresh-health" class="secondary">刷新状态</button><button id="logout" class="quiet">退出操作身份</button></div>
+    </section>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <section class="health-strip" aria-label="服务状态">
+      <div><span>数据存储</span><strong id="storage-state">等待授权</strong></div><div><span>执行服务</span><strong id="capability-state">尚未核验</strong></div><div><span>是否可启动</span><strong id="admission-state">尚未核验</strong></div>
+    </section>
+    <div id="observer-health" class="observer-health" role="status" hidden><strong id="observer-state"></strong><span id="observer-hint"></span></div>
+    <details id="service-capabilities" class="panel task-directory service-capabilities">
+      <summary>系统能力与兼容状态</summary>
+      <p class="field-help">手动读取服务提供的只读摘要，不会探测上游版本或更改配置。模块已配置不代表当前身份可执行相应操作；执行就绪仅适用于新节点任务。</p>
+      <button id="service-capabilities-read" class="secondary" type="button" data-auth disabled>读取能力摘要</button>
+      <p id="service-capabilities-message" class="field-help" role="status" aria-live="polite">授权后，手动读取此服务提供的只读能力摘要。</p>
+      <div id="service-capabilities-results" class="service-capabilities-results" aria-live="polite"></div>
+      <details id="service-capabilities-versions" class="advanced-options"><summary>版本与观察时间</summary><div id="service-capabilities-version-rows"></div></details>
+    </details>
+    <section id="workflows" class="section" aria-labelledby="workflow-title">
+      <div class="section-heading"><div><h2 id="workflow-title">运行工作流</h2></div><a href="./editor.html" class="muted">搭建或修改流程</a></div>
+      <div class="two-columns">
+        <form id="start-form" class="panel"><h3>启动工作流</h3><p class="muted">选择流程、填写任务输入，然后启动。进度和结果可在右侧查询。</p>
+          <label for="binding">选择工作流</label><input id="binding" list="binding-options" required maxlength="160" placeholder="选择已发布的流程" autocomplete="off"><datalist id="binding-options"></datalist><p id="binding-hint" class="field-help">授权后读取当前凭证可访问的工作流。</p>
+          <details class="advanced-options"><summary>高级选项 · 防止重复启动</summary>
+          <label for="trigger-key">本次触发标识</label><div class="inline"><input id="trigger-key" required maxlength="256" autocomplete="off" spellcheck="false"><button type="button" id="new-key" class="secondary">为新任务生成</button></div><p class="field-help">用于防止重复启动。结果未知时保留原值，只在发起新任务时更换。</p>
+          </details>
+          <label for="workflow-input">任务输入 <span class="muted">（JSON 对象）</span></label><textarea id="workflow-input" rows="5" spellcheck="false">{}</textarea>
+          <div class="work-item-start-selection"><p id="work-item-start-selection" class="field-help" role="status">尚未选用业务任务；运行仍可按原方式启动。</p><button id="work-item-start-clear" type="button" class="quiet" hidden>取消关联</button></div>
+          <button type="submit" data-auth>启动工作流</button><p id="start-feedback" class="feedback" aria-live="polite">尚未提交任务。</p>
+        </form>
+        <form id="run-form" class="panel"><h3>查看运行</h3><p class="muted">从下方历史记录选择一次运行，再查询进度；也可手动输入标识。</p>
+          <label for="query-binding">工作流</label><input id="query-binding" required maxlength="160" placeholder="选择与启动时相同的工作流" autocomplete="off">
+          <label for="run-id">运行标识</label><input id="run-id" required maxlength="160" placeholder="启动后自动填入，也可手动输入" spellcheck="false" autocomplete="off">
+          <button type="submit" class="secondary" data-auth>查询进度</button>
+          <button id="read-run-health" type="button" class="secondary" data-auth>只查本地记录</button><p class="field-help">本地检查不访问 Sim，可在原生服务断连时核对已有任务和资源记录。</p>
+          <details id="run-input-reuse" class="advanced-options">
+            <summary>以原输入准备新运行</summary>
+            <p class="field-help">读取此运行最初登记的输入，核对后填入启动表单。不会恢复、重试或自动启动；旧运行保持原状态，业务任务关联需要重新选择。</p>
+            <button id="run-input-read" type="button" class="secondary" disabled>读取原输入</button>
+            <p id="run-input-message" class="field-help" role="status" aria-live="polite">选择原工作流和运行后，显式读取原输入。</p>
+            <div id="run-input-preview"></div>
+          </details>
+          <section id="run-controls" class="run-controls" hidden aria-labelledby="run-controls-title"><h4 id="run-controls-title">当前流程控制</h4><p id="run-control-state" aria-live="polite"></p><p id="run-control-counts" class="field-help"></p><p id="run-control-hint" class="field-help"></p><div class="run-control-actions"><button type="button" id="pause-run" class="secondary">暂停后继任务</button><button type="button" id="continue-run" class="secondary">继续流程</button><button type="button" id="stop-run" class="danger">申请停止流程</button></div></section>
+          <div id="run-result" class="result empty" aria-live="polite"><span class="empty-mark" aria-hidden="true">—</span><p>还没有查询结果</p><small>输入运行标识后，查看执行状态与输出。</small></div>
+          <details id="run-view" class="run-view advanced-options">
+            <summary>固定版本运行图</summary>
+            <p class="field-help">只读展示已发布版本的流程结构和本地登记的节点任务；不表示原生分支命中或实时执行状态。读取需手动发起。</p>
+            <div class="run-view-actions"><button id="run-view-read" type="button" class="secondary" data-auth>读取运行图</button><button id="run-view-native-read" type="button" class="secondary" disabled>读取原生流程状态</button><label class="run-view-auto-label"><input id="run-view-auto" type="checkbox" disabled> 自动更新节点状态（每 10 秒）</label><span id="run-view-observed" class="field-help" role="status">尚未读取</span></div>
+            <p id="run-view-connection" class="field-help" role="status">尚未读取运行图。这不是 Codex 连接状态</p>
+            <p id="run-view-message" class="field-help" role="status">查询运行后，可手动读取固定版本运行图。</p>
+            <dl id="run-view-context" class="run-view-native-summary" hidden></dl>
+            <section id="run-view-parameters" hidden>
+              <button id="run-view-parameters-read" type="button" class="secondary">读取本次任务参数</button>
+              <p id="run-view-parameters-message" class="field-help" role="status">读取运行图后，可单独查看本次根提交的任务参数。这是本地保存的输入，不是 Codex 提示词。</p>
+              <div id="run-view-parameters-preview"></div>
+            </section>
+            <section id="run-view-native" class="run-view-native" hidden aria-labelledby="run-view-native-title">
+              <h4 id="run-view-native-title">原生流程摘要</h4>
+              <p id="run-view-native-message" class="field-help" role="status">尚未读取原生流程状态。</p>
+              <dl id="run-view-native-summary" class="run-view-native-summary"></dl>
+              <details id="run-view-native-identifiers"><summary>查看原生状态标识</summary><dl id="run-view-native-ids" class="run-view-native-summary"></dl></details>
+            </section>
+            <div id="run-view-graph" class="run-view-graph" hidden></div>
+            <section id="run-view-tasks" class="run-view-tasks" hidden aria-labelledby="run-view-tasks-title">
+              <h4 id="run-view-tasks-title">所选节点的已知任务</h4>
+              <p id="run-view-tasks-message" class="field-help"></p>
+              <ul id="run-view-task-list" class="task-list" aria-label="所选节点的已知任务"></ul>
+            </section>
+            <details id="run-view-decisions" class="advanced-options" hidden>
+              <summary>条件命中记录</summary>
+              <p class="field-help">仅核对固定版本图中当前块已返回的条件输出；未观测或无法核验不表示条件为假，也不是完整激活历史或路径判断。</p>
+              <div class="run-view-actions"><button type="button" class="secondary" data-decision-read>读取/刷新条件命中记录</button><span class="field-help" data-decision-page>第 1 页</span></div>
+              <p class="field-help" role="status" data-decision-message>尚未读取条件命中记录。</p>
+              <ul class="task-list" data-decision-list aria-label="当前块条件命中记录"></ul>
+              <div class="run-view-actions"><button type="button" class="secondary" data-decision-prev disabled>上一页</button><button type="button" class="secondary" data-decision-next disabled>下一页</button></div>
+            </details>
+          </details>
+        </form>
+      </div>
+      <div class="panel task-directory run-directory" aria-labelledby="run-directory-title">
+        <div class="section-heading"><div><h3 id="run-directory-title">历史运行</h3><p class="muted">选择记录后，点击“查询进度”查看结果。列表只记录提交情况。</p></div><button id="refresh-run-directory" class="secondary" type="button" data-auth>刷新列表</button></div>
+        <div class="task-filters"><div><label for="run-directory-binding">选择工作流</label><select id="run-directory-binding" data-auth><option value="">授权后选择工作流</option></select></div><div><label for="run-directory-page-size">每页记录数</label><select id="run-directory-page-size" data-auth><option value="10">10 条</option><option value="25">25 条</option><option value="50">50 条</option></select></div></div>
+        <p id="run-directory-message" class="field-help" role="status">授权后读取可见工作流的本地提交记录；旧服务不可用时仍可手动查询运行。</p>
+        <ul id="run-directory-list" class="task-list" aria-label="本地运行提交记录"></ul>
+        <div class="task-pagination"><button id="run-directory-prev" class="secondary" type="button" disabled>上一页</button><span id="run-directory-page">第 1 页</span><button id="run-directory-next" class="secondary" type="button" disabled>下一页</button></div>
+      </div>
+      <details id="trigger-inspection" class="panel task-directory trigger-inspection">
+        <summary>已配置自动入口</summary>
+        <p class="field-help">只读查看当前凭证可见的入口，并核对本地原事件记录；不会投递事件或创建调度。</p>
+        <div class="section-heading"><span id="trigger-directory-message" class="field-help" role="status">授权后读取已配置入口。</span><button id="trigger-directory-refresh" class="secondary" type="button" data-auth>刷新入口</button></div>
+        <ul id="trigger-directory-list" class="task-list" aria-label="已配置自动入口"></ul>
+        <div class="task-pagination"><button id="trigger-directory-prev" class="secondary" type="button" disabled>上一页</button><span id="trigger-directory-page">第 1 页</span><button id="trigger-directory-next" class="secondary" type="button" disabled>下一页</button></div>
+        <form id="trigger-lookup-form" class="trigger-lookup" hidden>
+          <h4 id="trigger-lookup-title">核对原事件</h4>
+          <p id="trigger-lookup-hint" class="field-help"></p>
+          <label for="trigger-event-id">原事件标识</label><input id="trigger-event-id" type="text" maxlength="1024" autocomplete="off" spellcheck="false">
+          <button id="trigger-lookup-submit" class="secondary" type="submit">核对原事件</button>
+          <p id="trigger-lookup-message" class="field-help" role="status">输入已有事件标识后进行只读核对。</p>
+          <section id="trigger-lookup-result" class="trigger-lookup-result" hidden aria-labelledby="trigger-lookup-result-title">
+            <h4 id="trigger-lookup-result-title">核对结果</h4>
+            <p id="trigger-lookup-result-message" class="field-help" role="status"></p>
+            <dl id="trigger-lookup-result-fields" class="trigger-summary"></dl>
+            <details><summary>查看入口和运行标识</summary><dl id="trigger-lookup-result-ids" class="trigger-summary"></dl></details>
+            <button id="trigger-open-run" class="secondary" type="button" hidden>在运行查询中查看</button>
+          </section>
+        </form>
+      </details>
+      <div class="panel task-directory work-item-directory" aria-labelledby="work-items-title">
+        <div class="section-heading"><div><h3 id="work-items-title">业务任务</h3><p class="muted">登记一份固定目标与验收条件，供多个显式触发的运行关联。登记不会启动工作流。</p></div><button id="work-items-refresh" class="secondary" type="button" data-auth>刷新</button></div>
+        <div class="task-filters"><div><label for="work-items-project">项目</label><select id="work-items-project" data-auth><option value="">授权后读取项目</option></select></div></div>
+        <details id="work-item-create-details" class="advanced-options"><summary>登记新的业务任务</summary>
+          <p class="field-help">登记内容创建后不可修改。同一标识和内容可安全重放；结果不明时只核对原标识，不自动重复提交。</p>
+          <label for="work-item-title">目标名称</label><input id="work-item-title" maxlength="160" required autocomplete="off">
+          <label for="work-item-goal">目标</label><textarea id="work-item-goal" rows="3" maxlength="4000" required></textarea>
+          <label for="work-item-criteria">验收条件（每行一条，1–8 条）</label><textarea id="work-item-criteria" rows="4" maxlength="4000" required></textarea>
+          <p id="work-item-create-id" class="field-help technical" aria-live="polite"></p>
+          <button id="work-item-create-submit" type="button" data-auth>登记业务任务</button><button id="work-item-create-check" type="button" class="secondary" data-auth hidden>核对原登记</button>
+          <p id="work-item-create-message" class="field-help" role="status">请填写固定目标与可验证的验收条件。</p>
+        </details>
+        <div class="task-filters"><div><label for="work-items-page-size">每页任务</label><select id="work-items-page-size" data-auth><option value="10">10 条</option><option value="25">25 条</option><option value="50">50 条</option></select></div></div>
+        <p id="work-items-message" class="field-help" role="status">授权后读取项目业务任务。</p>
+        <ul id="work-items-list" class="task-list" aria-label="业务任务列表"></ul>
+        <div class="task-pagination"><button id="work-items-prev" class="secondary" type="button" disabled>上一页</button><span id="work-items-page">第 1 页</span><button id="work-items-next" class="secondary" type="button" disabled>下一页</button></div>
+        <section id="work-item-runs" class="work-item-runs" hidden aria-labelledby="work-item-runs-title">
+          <div class="section-heading"><div><h4 id="work-item-runs-title">关联运行</h4><p id="work-item-runs-message" class="field-help" role="status"></p></div></div>
+          <ul id="work-item-runs-list" class="task-list" aria-label="业务任务关联的本地运行记录"></ul>
+          <div class="task-pagination"><button id="work-item-runs-prev" class="secondary" type="button" disabled>上一页</button><span id="work-item-runs-page">第 1 页</span><button id="work-item-runs-next" class="secondary" type="button" disabled>下一页</button></div>
+        </section>
+      </div>
+    </section>
+    <section id="tasks" class="section" aria-labelledby="task-title">
+      <div class="section-heading"><div><h2 id="task-title">任务中心</h2></div></div>
+      <div class="panel task-directory" aria-labelledby="directory-title">
+        <div class="section-heading"><div><h3 id="directory-title">节点任务</h3><p class="muted">查看每个角色的执行情况。选择任务，可查看结果、产物和记忆。</p></div><button id="refresh-tasks" class="secondary" data-auth>刷新列表</button></div>
+        <details id="task-scope-options" class="advanced-options"><summary>按项目、业务任务或某次运行查找</summary><p>项目可单独筛选；业务任务标识需同时提供项目，可跨多次运行查找。也可与完整的项目、流程和运行范围叠加。指定节点时，列出同次运行的全部激活与尝试；任务标识排序不代表时间顺序。</p><div class="task-filters"><div><label for="task-project-id">项目标识（可选）</label><input id="task-project-id" type="text" maxlength="256" autocomplete="off" data-auth></div><div><label for="task-work-item-id">业务任务标识（可选）</label><input id="task-work-item-id" type="text" maxlength="128" pattern="[A-Za-z0-9_-]{1,128}" autocomplete="off" data-auth></div><div><label for="task-workflow-id">流程标识（可选）</label><input id="task-workflow-id" type="text" maxlength="256" autocomplete="off" data-auth></div><div><label for="task-run-id">运行标识（可选）</label><input id="task-run-id" type="text" maxlength="256" autocomplete="off" spellcheck="false" data-auth></div><div><label for="task-node-id">节点标识（限同次运行，可选）</label><input id="task-node-id" type="text" maxlength="256" autocomplete="off" spellcheck="false" data-auth></div><button id="task-filter-apply" type="button" class="secondary" data-auth>应用范围</button><button id="task-filter-clear" type="button" class="secondary" data-auth>清除范围</button></div></details><div class="task-filters"><div><label for="task-status">执行状态</label><select id="task-status" data-auth><option value="">全部状态</option><option value="registered">已登记</option><option value="submitting">提交中</option><option value="uncertain">结果待核对</option><option value="accepted">已接收</option><option value="succeeded">执行成功</option><option value="failed">执行失败</option><option value="cancel_requested">已申请取消</option><option value="canceled">已取消</option></select></div><div><label for="task-page-size">每页任务数</label><select id="task-page-size" data-auth><option value="10">10 条</option><option value="25">25 条</option><option value="50">50 条</option></select></div></div>
+        <p id="task-list-message" class="field-help" role="status">首页可直接查看任务列表；授权后在此读取详细记录。</p>
+        <ul id="task-list" class="task-list" aria-label="授权节点任务"></ul>
+        <div class="task-pagination"><button id="task-prev" class="secondary" disabled>上一页</button><span id="task-page">第 1 页</span><button id="task-next" class="secondary" disabled>下一页</button></div>
+      </div>
+      <div class="panel"><form id="task-form"><label for="task-id">节点任务标识</label><div class="inline"><input id="task-id" required maxlength="256" placeholder="输入需要查询的任务标识" autocomplete="off" spellcheck="false"><button type="submit" class="secondary" data-auth>查询任务</button></div></form>
+        <div id="task-result" class="result empty" aria-live="polite"><p>尚未选择节点任务</p><small>查询后分别展示执行、验证和记忆回写状态。</small></div>
+        <button id="cancel-task" class="danger" hidden>申请取消此任务</button>
+      </div>
+    </section>
+    <footer><strong>执行、验收和记忆分别记录</strong><span>收到提交回执后，仍需查询各项结果。</span></footer>
+  </main>
+  <dialog id="cancel-dialog"><h2 id="cancel-title">取消当前节点任务？</h2><p id="cancel-description">将向服务提交取消请求。请求被接收后，仍需查询确认执行是否已经停止。</p><div class="inline"><button id="keep-task" class="secondary">继续保留任务</button><button id="confirm-cancel" class="danger">确认申请取消</button></div></dialog>
+<dialog id="pause-run-dialog" aria-labelledby="pause-run-title"><h2 id="pause-run-title">暂停后继任务时，活动 Codex 如何处理？</h2><p>必须先选择。继续表示活动任务保持运行；中断只申请停止当前活动任务，未确认前不能视为已停止。排队任务不会被这次选择取消。</p><p id="pause-run-identity" class="technical"></p><div class="inline"><button id="dismiss-pause-run" type="button" class="secondary">返回</button><button id="pause-run-continue" type="button" class="secondary">活动任务继续</button><button id="pause-run-interrupt" type="button" class="danger">申请中断活动任务</button></div></dialog>
+<dialog id="stop-run-dialog" aria-labelledby="stop-run-title"><h2 id="stop-run-title">申请停止当前流程？</h2><p>只影响当前流程自己的任务，不删除角色或记忆。停止申请不代表任务或 Codex 已退出；请继续查询资源释放情况。</p><p id="stop-run-identity" class="technical"></p><div class="inline"><button id="dismiss-stop-run" type="button" class="secondary">返回</button><button id="confirm-stop-run" type="button" class="danger">确认申请停止</button></div></dialog>
+</body>
+</html>

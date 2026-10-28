@@ -1,0 +1,17 @@
+# 单层固定子流程的受控保存、发布与预算
+
+已接通后端源码：满足下列条件的单层展开图可走原save/publish API，运行链识别固定子图并共用父运行预算。预览仍是只读操作，不执行任务。已增加[原编辑器子流程面板](subworkflow-editor.md)，但没有本轮真实保存/发布/执行验收；完整AC-33不提升。
+
+保存和发布均在原authoring锁内、任何Sim写入前执行准入：父子流程属于同一已授权项目；子引用与本地已接受的author-publish回执中的revision/deployment/hash完全一致；指定原生版本与嵌入sourceDocument一致；来源未归档或处于归档处理中。活动部署可以已经更新，旧引用不会被替换为latest。
+
+原来源文档的Agent策略用当前配置重算，必须与子版本发布回执原agentPolicies规范相等，包括角色Agent ID、roleRevision、节点策略及独立验收策略。角色行为或验证策略变化时拒绝父图保存/发布，需显式核对并发布新子版本；不会按名称找其他角色，不新建角色或替换QwenPaw原生记忆。已有父运行继续使用其原发布快照，来源后续变化不会改写父图。
+
+项目必须已经明确配置runBudget（maxSubmissions/maxExecutionSeconds），不自动创建或提高预算。当前深度上限固定1，展开图仍拒嵌套、batchItem子来源、多结束节点和原编译器不支持的loop/parallel组合；整个展开后的父图必须含至少一个Agent以进入已有外部任务运行链。整个父图为纯人工/控制时暂不开放这一执行路径。
+
+已发布externalTasks增加严格整数subworkflowDepthLimit=1；原无子图配置和运行省略该字段不变。新父运行冻结depth与当前项目预算，所有子节点、重试/循环/并行仍归同一父workflow/run额度。父运行或任务run ledger已有记录时，重放与恢复只沿原冻结预算，即使当前项目预算随后修改或移除也不替换；冻结预算缺失/损坏则拒绝。提交次数/阶段时限的既有精度边界见[运行额度](run-budget.md)，不是额外模型调用或金额计量。
+
+PublicationVerifier的新显式分支要求全部子图由原compiler完整解码重建、深度1、wait白名单准确、loop/parallel声明与容器完全匹配；实际运行日志图与原发布图相等。无depth flag的旧图检查拒绝真正的subflow函数marker，普通业务字符串不作marker。冻结runBudget必须有效。它不会重新查当前子流程活动定义，也不会在适配器中推进后继图。
+
+准入拒绝使用已知subworkflow_not_admitted回执及固定reason，发生在save_state/deploy之前；编辑器显示中文原因摘要，保留本地草稿，不当作提交未知自动重发。来源读取完成后、实际保存/发布前再次检查原操作权限。运行图和只读版本历史识别子流程输入/返回节点；原编辑器在后台明确支持时允许父图编辑，固定内部节点和涉及该组的连线保持只读。可移植模板导入/导出继续拒子图，避免把带本机固定引用的图当作跨安装模板。
+
+本轮没有修改正式runBudget、就绪证明或任何QwenPaw/Sim上游/插件/原生记忆配置，现有业务执行准入保持。根与指定gpt-6-luna完成六Python AST及源码审查；修复恢复时读取当前预算的问题，并收紧原生容器/marker检查。未运行测试、Node、HTTP、浏览器、模型探针、lint/typecheck/build或新流程提交；源码接线和服务启动不证明真实执行通过，完整PRD/AC20/22/13保持。
